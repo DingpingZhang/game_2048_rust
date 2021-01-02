@@ -1,10 +1,10 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Index, IndexMut, Mul};
 
 pub enum GameAction {
     Merge {
         from: usize,
         to: usize,
-        merge_result: i32,
+        merge_result: u32,
     },
     Move {
         from: usize,
@@ -20,16 +20,20 @@ pub enum MoveOrientation {
 }
 
 pub struct Game2048Matrix {
-    storage: Vec<i32>,
+    storage: Vec<u32>,
     matrix_order: usize,
 }
 
 impl Game2048Matrix {
     pub fn new(matrix_order: usize) -> Game2048Matrix {
         Game2048Matrix {
-            storage: Vec::with_capacity(matrix_order * matrix_order),
+            storage: vec![0; matrix_order * matrix_order],
             matrix_order,
         }
+    }
+
+    pub fn get_matrix_order(&self) -> usize {
+        self.matrix_order
     }
 
     pub fn move_to(&mut self, orientation: MoveOrientation) {
@@ -88,12 +92,51 @@ impl Game2048Matrix {
         }
     }
 
-    fn get(&self, index: usize, index_translator: &impl Fn(usize) -> usize) -> i32 {
+    fn get(&self, index: usize, index_translator: &impl Fn(usize) -> usize) -> u32 {
         self.storage[index_translator(index)]
     }
 
-    fn set(&mut self, index: usize, value: i32, index_translator: &impl Fn(usize) -> usize) {
+    fn set(&mut self, index: usize, value: u32, index_translator: &impl Fn(usize) -> usize) {
         self.storage[index_translator(index)] = value;
+    }
+}
+
+impl Index<(usize, usize)> for Game2048Matrix {
+    type Output = u32;
+
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.storage[index.0 + index.1 * self.matrix_order]
+    }
+}
+
+impl IndexMut<(usize, usize)> for Game2048Matrix {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        &mut self.storage[index.0 + index.1 * self.matrix_order]
+    }
+}
+
+impl PartialEq for Game2048Matrix {
+    fn eq(&self, other: &Self) -> bool {
+        if self.storage.len() != other.storage.len() {
+            return false;
+        }
+
+        for i in 0..self.storage.len() {
+            if self.storage[i] != other.storage[i] {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+impl Clone for Game2048Matrix {
+    fn clone(&self) -> Self {
+        Game2048Matrix {
+            storage: self.storage.clone(),
+            matrix_order: self.matrix_order,
+        }
     }
 }
 
