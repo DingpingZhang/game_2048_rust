@@ -15,12 +15,11 @@ const MATRIX_ORDER: usize = 4;
 fn main() {
     let mut rng = rand::thread_rng();
     let mut matrix = create_matrix(MATRIX_ORDER, &mut rng);
-    let mut score = 0_u32;
-    let mut max_number = 0_u32;
     let mut backup: Game2048Matrix;
 
     loop {
-        print_header_info(score, max_number);
+        // TODO: Print score and max_number.
+        print_header_info(0, 0);
         print_matrix(&matrix);
 
         backup = matrix.clone();
