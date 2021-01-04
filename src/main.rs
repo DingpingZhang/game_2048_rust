@@ -1,4 +1,5 @@
 mod game_2048_matrix;
+mod game_data;
 
 use crossterm::{
     cursor,
@@ -6,7 +7,8 @@ use crossterm::{
     execute,
     terminal::{Clear, ClearType},
 };
-use game_2048_matrix::{Game2048Matrix, MoveOrientation};
+use game_2048_matrix::{Game2048Matrix, GameActionReporter, MoveOrientation};
+use game_data::GameData;
 use rand::prelude::*;
 use std::io::stdout;
 
@@ -14,12 +16,13 @@ const MATRIX_ORDER: usize = 4;
 
 fn main() {
     let mut rng = rand::thread_rng();
-    let mut matrix = create_matrix(MATRIX_ORDER, &mut rng);
-    let mut backup: Game2048Matrix;
+    let data = GameData::new();
+    let mut matrix = create_matrix(MATRIX_ORDER, &mut rng, &data);
+    let mut backup: Game2048Matrix<GameData>;
 
     loop {
         // TODO: Print score and max_number.
-        print_header_info(0, 0);
+        print_header_info(data.get_score(), data.get_max_number());
         print_matrix(&matrix);
 
         backup = matrix.clone();
@@ -53,7 +56,9 @@ fn main() {
                 code: KeyCode::Char(' '),
                 modifiers: KeyModifiers::NONE,
             }) => {
-                matrix = create_matrix(MATRIX_ORDER, &mut rng);
+                matrix = create_matrix(MATRIX_ORDER, &mut rng, &data);
+                data.set_score(0);
+                data.set_max_number(0);
                 backup = matrix.clone();
             }
             _ => (),
@@ -67,19 +72,26 @@ fn main() {
     }
 }
 
-fn create_matrix(matrix_order: usize, rng: &mut ThreadRng) -> Game2048Matrix {
-    let mut matrix = Game2048Matrix::new(matrix_order);
+fn create_matrix<'a, T: GameActionReporter>(
+    matrix_order: usize,
+    rng: &mut ThreadRng,
+    reporter: &'a T,
+) -> Game2048Matrix<'a, T> {
+    let mut matrix = Game2048Matrix::new(matrix_order, reporter);
     fill_matrix_once(&mut matrix, rng);
     fill_matrix_once(&mut matrix, rng);
     matrix
 }
 
-fn fill_matrix_once(matrix: &mut Game2048Matrix, rng: &mut ThreadRng) {
+fn fill_matrix_once<T: GameActionReporter>(matrix: &mut Game2048Matrix<T>, rng: &mut ThreadRng) {
     let index = get_exclusive_index(matrix, rng);
     matrix[index] = if rng.gen() { 2 } else { 4 };
 }
 
-fn get_exclusive_index(matrix: &Game2048Matrix, rng: &mut ThreadRng) -> (usize, usize) {
+fn get_exclusive_index<T: GameActionReporter>(
+    matrix: &Game2048Matrix<T>,
+    rng: &mut ThreadRng,
+) -> (usize, usize) {
     let mut result;
     let length = matrix.get_matrix_order();
 
@@ -101,7 +113,7 @@ fn print_header_info(score: u32, max_number: u32) {
     println!();
 }
 
-fn print_matrix(matrix: &Game2048Matrix) {
+fn print_matrix<T: GameActionReporter>(matrix: &Game2048Matrix<T>) {
     let order = matrix.get_matrix_order();
     for i in 0..order {
         for j in 0..order {

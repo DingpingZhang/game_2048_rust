@@ -19,16 +19,22 @@ pub enum MoveOrientation {
     Down,
 }
 
-pub struct Game2048Matrix {
-    storage: Vec<u32>,
-    matrix_order: usize,
+pub trait GameActionReporter {
+    fn report(&self, action: GameAction);
 }
 
-impl Game2048Matrix {
-    pub fn new(matrix_order: usize) -> Game2048Matrix {
+pub struct Game2048Matrix<'a, T: GameActionReporter> {
+    storage: Vec<u32>,
+    matrix_order: usize,
+    reporter: Option<&'a T>,
+}
+
+impl<'a, T: GameActionReporter> Game2048Matrix<'a, T> {
+    pub fn new(matrix_order: usize, reporter: &'a T) -> Game2048Matrix<'a, T> {
         Game2048Matrix {
             storage: vec![0; matrix_order * matrix_order],
             matrix_order,
+            reporter: Some(reporter),
         }
     }
 
@@ -44,19 +50,14 @@ impl Game2048Matrix {
             MoveOrientation::Right => get_linear_function(length, -1, length - 1),
             MoveOrientation::Down => get_linear_function(1, -length, length * (length - 1)),
         };
-        let reporter = |_action| {};
 
         for i in 0..self.matrix_order {
             let index_translator = |index| linear_function(i as i32, index as i32) as usize;
-            self.move_and_merge_array(index_translator, &reporter);
+            self.move_and_merge_array(index_translator);
         }
     }
 
-    fn move_and_merge_array(
-        &mut self,
-        index_translator: impl Fn(usize) -> usize,
-        reporter: impl Fn(GameAction) -> (),
-    ) {
+    fn move_and_merge_array(&mut self, index_translator: impl Fn(usize) -> usize) {
         let mut p_current = 0;
         for p_next in 1..self.matrix_order {
             let next = self.get(p_next, &index_translator);
@@ -69,7 +70,7 @@ impl Game2048Matrix {
                 let merge_result = next * 2;
                 self.set(p_current, merge_result, &index_translator);
                 self.set(p_next, 0, &index_translator);
-                reporter(GameAction::Merge {
+                self.raise_action(GameAction::Merge {
                     from: p_next,
                     to: p_current,
                     merge_result,
@@ -83,12 +84,19 @@ impl Game2048Matrix {
                 if p_current != p_next {
                     self.set(p_current, next, &index_translator);
                     self.set(p_next, 0, &index_translator);
-                    reporter(GameAction::Move {
+                    self.raise_action(GameAction::Move {
                         from: p_next,
                         to: p_current,
                     });
                 }
             }
+        }
+    }
+
+    fn raise_action(&mut self, action: GameAction) {
+        match self.reporter {
+            Some(ref mut reporter) => (*reporter).report(action),
+            None => (),
         }
     }
 
@@ -101,7 +109,7 @@ impl Game2048Matrix {
     }
 }
 
-impl Index<(usize, usize)> for Game2048Matrix {
+impl<'a, T: GameActionReporter> Index<(usize, usize)> for Game2048Matrix<'a, T> {
     type Output = u32;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
@@ -109,13 +117,13 @@ impl Index<(usize, usize)> for Game2048Matrix {
     }
 }
 
-impl IndexMut<(usize, usize)> for Game2048Matrix {
+impl<'a, T: GameActionReporter> IndexMut<(usize, usize)> for Game2048Matrix<'a, T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.storage[index.0 * self.matrix_order + index.1]
     }
 }
 
-impl PartialEq for Game2048Matrix {
+impl<'a, T: GameActionReporter> PartialEq for Game2048Matrix<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         if self.storage.len() != other.storage.len() {
             return false;
@@ -131,11 +139,12 @@ impl PartialEq for Game2048Matrix {
     }
 }
 
-impl Clone for Game2048Matrix {
+impl<'a, T: GameActionReporter> Clone for Game2048Matrix<'a, T> {
     fn clone(&self) -> Self {
         Game2048Matrix {
             storage: self.storage.clone(),
             matrix_order: self.matrix_order,
+            reporter: None,
         }
     }
 }
