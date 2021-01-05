@@ -95,7 +95,7 @@ impl<'a, T: GameActionReporter> Game2048Matrix<'a, T> {
 
     fn raise_action(&mut self, action: GameAction) {
         match self.reporter {
-            Some(ref mut reporter) => (*reporter).report(action),
+            Some(reporter) => (*reporter).report(action),
             None => (),
         }
     }
