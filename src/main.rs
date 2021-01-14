@@ -22,7 +22,7 @@ fn main() {
 
     loop {
         // TODO: Print score and max_number.
-        print_header_info(data.get_score(), data.get_max_number());
+        print_header_info(data.score.get(), data.max_number.get());
         print_matrix(&matrix);
 
         backup = matrix.clone();
@@ -57,8 +57,8 @@ fn main() {
                 modifiers: KeyModifiers::NONE,
             }) => {
                 matrix = create_matrix(MATRIX_ORDER, &mut rng, &data);
-                data.set_score(0);
-                data.set_max_number(0);
+                data.score.set(0);
+                data.max_number.set(0);
                 backup = matrix.clone();
             }
             _ => (),
