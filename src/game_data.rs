@@ -18,14 +18,11 @@ impl GameData {
 
 impl GameActionReporter for GameData {
     fn report(&self, action: GameAction) {
-        match action {
-            GameAction::Merge { merge_result, .. } => {
-                self.score.set(self.score.get() + merge_result);
-                if self.max_number.get() < merge_result {
-                    self.max_number.set(merge_result);
-                }
+        if let GameAction::Merge { merge_result, .. } = action {
+            self.score.set(self.score.get() + merge_result);
+            if self.max_number.get() < merge_result {
+                self.max_number.set(merge_result);
             }
-            _ => (),
         }
     }
 }
