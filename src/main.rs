@@ -21,7 +21,6 @@ fn main() {
     let mut backup: Game2048Matrix<GameData>;
 
     loop {
-        // TODO: Print score and max_number.
         print_header_info(data.score.get(), data.max_number.get());
         print_matrix(&matrix);
 
@@ -31,27 +30,19 @@ fn main() {
             Event::Key(KeyEvent {
                 code: KeyCode::Left,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                matrix.move_to(MoveOrientation::Left);
-            }
+            }) => matrix.move_to(MoveOrientation::Left),
             Event::Key(KeyEvent {
                 code: KeyCode::Up,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                matrix.move_to(MoveOrientation::Up);
-            }
+            }) => matrix.move_to(MoveOrientation::Up),
             Event::Key(KeyEvent {
                 code: KeyCode::Right,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                matrix.move_to(MoveOrientation::Right);
-            }
+            }) => matrix.move_to(MoveOrientation::Right),
             Event::Key(KeyEvent {
                 code: KeyCode::Down,
                 modifiers: KeyModifiers::NONE,
-            }) => {
-                matrix.move_to(MoveOrientation::Down);
-            }
+            }) => matrix.move_to(MoveOrientation::Down),
             Event::Key(KeyEvent {
                 code: KeyCode::Char(' '),
                 modifiers: KeyModifiers::NONE,
@@ -115,9 +106,9 @@ fn print_header_info(score: u32, max_number: u32) {
 
 fn print_matrix<T: GameActionReporter>(matrix: &Game2048Matrix<T>) {
     let order = matrix.get_matrix_order();
-    for i in 0..order {
-        for j in 0..order {
-            let value = matrix[(i, j)];
+    for x in 0..order {
+        for y in 0..order {
+            let value = matrix[(x, y)];
             let value_string = value.to_string();
             let value_str = value_string.as_str();
             print!("{:-5} ", if value == 0 { "." } else { value_str });
